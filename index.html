@@ -42,6 +42,7 @@
             </h2>
             <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="login.empCode">Código de Empleado</label>
             <input type="text" id="emp" data-i18n-ph="login.empCode.ph" placeholder="Ej: OP-001" class="w-full p-3 border border-slate-300 rounded-lg text-center font-mono text-lg mb-3">
+            <input type="text" id="company-code" placeholder="Empresa (opcional)" class="w-full p-2 border border-slate-200 rounded-lg text-center text-sm mb-3">
             <div id="password-section">
                 <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="login.password">Contraseña Personal</label>
                 <input type="password" id="pass" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-lg text-center font-mono text-lg mb-3">
@@ -73,6 +74,7 @@
             <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4" data-i18n="admin.login.title">🔒 Acceso de Gerencia</h2>
             <input id="admin-code" type="text" data-i18n-ph="admin.login.codePh" placeholder="Código de administrador" class="w-full p-3 border rounded-lg mb-3">
             <input id="admin-pass" type="password" data-i18n-ph="admin.login.passPh" placeholder="Contraseña" class="w-full p-3 border rounded-lg mb-3">
+            <input id="admin-company" type="text" placeholder="Código empresa (opcional)" class="w-full p-3 border rounded-lg mb-3">
             <button onclick="iniciarSesionAdmin()" data-i18n="admin.login.enter" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-bold p-3 rounded-lg">Entrar al panel</button>
         </section>
         <section id="admin-panel" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -157,7 +159,7 @@
             const pass = document.getElementById('pass').value.trim();
             const token = localStorage.getItem('pulsera_vip');
             if (!emp || (!pass && !token)) return mostrarMensaje(t('msg.enterCodePass'), 'error');
-            const params = new URLSearchParams({ employee_code: emp, entry_type: tipo, location: 'Taller' });
+            const params = new URLSearchParams({ employee_code: emp, entry_type: tipo, location: 'Taller' }); const compW = (document.getElementById('company-code')?.value || '').trim(); if (compW) params.set('company_code', compW);
             if (pass) params.set('password', pass);
             try {
                 const response = await fetch(`${API_BASE_URL}/api/v1/time/clock?${params}`, { method: 'POST', headers: token && !pass ? authHeaders(token) : {} });
@@ -197,7 +199,7 @@
         function activarModoTrabajando(obra) { document.getElementById('cli').value = obra; document.getElementById('cli').disabled = true; document.getElementById('btn-empezar').classList.add('hidden'); document.getElementById('btn-terminar').classList.remove('hidden'); document.getElementById('cronometro').classList.remove('hidden'); }
         function desactivarModoTrabajando() { document.getElementById('cli').value = ''; document.getElementById('cli').disabled = false; document.getElementById('btn-empezar').classList.remove('hidden'); document.getElementById('btn-terminar').classList.add('hidden'); document.getElementById('cronometro').classList.add('hidden'); }
         async function iniciarSesionAdmin() {
-            const params = new URLSearchParams({ employee_code: document.getElementById('admin-code').value.trim(), password: document.getElementById('admin-pass').value });
+            const params = new URLSearchParams({ employee_code: document.getElementById('admin-code').value.trim(), password: document.getElementById('admin-pass').value }); const compA = (document.getElementById('admin-company')?.value || '').trim(); if (compA) params.set('company_code', compA);
             try { const response = await fetch(`${API_BASE_URL}/api/v1/auth/login?${params}`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || t('msg.adminDenied')); localStorage.setItem(adminTokenKey, data.token); mostrarPanelAdmin(); mostrarMensaje(t('msg.adminGranted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
         }
         function mostrarPanelAdmin() { document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden'); cargarRegistros(); }
