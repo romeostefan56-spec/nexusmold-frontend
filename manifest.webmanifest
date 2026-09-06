@@ -1,0 +1,21 @@
+{
+  "id": "nexusmold-cloud",
+  "name": "NexusMold Cloud",
+  "short_name": "NexusMold",
+  "description": "Control de presencia, obras y gestión de operarios del taller.",
+  "lang": "es",
+  "dir": "auto",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

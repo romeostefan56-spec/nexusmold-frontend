@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="app.title">NexusMold Cloud - Plataforma Integral SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="i18n.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NexusMold">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col items-center p-4 md:p-8">
+    <div id="offline-badge" data-i18n="net.offline" class="hidden fixed top-2 left-1/2 transform -translate-x-1/2 z-50 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">⚠️ Sin conexión</div>
+    <header class="w-full max-w-4xl bg-slate-900 text-white p-4 rounded-xl shadow-lg flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-xl font-bold tracking-wider">🏗️ NexusMold <span class="text-xs bg-blue-600 px-2 py-0.5 rounded-full uppercase">Cloud Pro</span></h1>
+            <p class="text-xs text-slate-400" data-i18n="app.subtitle">Control de Presencia, Obras y Gestión Avanzada</p>
+        </div>
+        <div class="flex bg-slate-800 p-1 rounded-lg items-center flex-wrap justify-center gap-1">
+            <button onclick="cambiarVista('worker')" id="nav-worker" data-i18n="nav.worker" class="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white">📱 Fichaje Operarios</button>
+            <button onclick="cambiarVista('admin')" id="nav-admin" data-i18n="nav.admin" class="px-4 py-2 rounded-md text-sm font-medium text-slate-300">📊 Panel Gerencia</button>
+            <button id="btn-install-app" onclick="instalarApp()" data-i18n="install.app" class="hidden px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white" title="Instalar NexusMold como aplicación">📲 Instalar App</button>
+            <select data-i18n-selector onchange="setLang(this.value)" aria-label="Language / Idioma / Langue / Sprache / Lingua" class="bg-slate-700 text-white text-xs rounded-md px-2 py-2 mx-1 outline-none cursor-pointer">
+                <option value="es">ES</option><option value="en">EN</option><option value="fr">FR</option><option value="de">DE</option><option value="it">IT</option>
+            </select>
+        </div>
+    </header>
+
+    <main id="view-worker" class="w-full max-w-md space-y-6">
+        <section class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4 flex items-center justify-between">
+                <span data-i18n="login.title">🔐 Identificación</span>
+                <span id="badge-vip" data-i18n="vip.active" class="hidden text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">VIP Activo</span>
+            </h2>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="login.empCode">Código de Empleado</label>
+            <input type="text" id="emp" data-i18n-ph="login.empCode.ph" placeholder="Ej: OP-001" class="w-full p-3 border border-slate-300 rounded-lg text-center font-mono text-lg mb-3">
+            <div id="password-section">
+                <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="login.password">Contraseña Personal</label>
+                <input type="password" id="pass" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-lg text-center font-mono text-lg mb-3">
+                <button onclick="ficharTaller('CLOCK_IN')" data-i18n="login.clockIn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-lg">🟢 Iniciar Sesión / Fichar Entrada</button>
+            </div>
+            <div id="logout-section" class="hidden">
+                <button onclick="cerrarSesionVIP()" data-i18n="login.logout" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-2 rounded-lg text-sm">Cerrar Sesión / Borrar Pulsera VIP</button>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4" data-i18n="workshop.out.title">🏭 Salida de Taller</h2>
+            <button onclick="ficharTaller('CLOCK_OUT')" data-i18n="workshop.clockOut" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-lg">🔴 Fichar Salida Taller</button>
+        </section>
+
+        <section class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-1" data-i18n="tasks.title">🏗️ Tareas en Obra</h2>
+            <p class="text-xs text-slate-500 mb-4" data-i18n="tasks.vipNote">Protegido con tu Token VIP</p>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="tasks.codeLabel">Código de Obra (mín. 4 cifras)</label>
+            <input type="text" id="cli" data-i18n-ph="tasks.codePh" placeholder="Ej: 5480" class="w-full p-3 border border-slate-300 rounded-lg text-center font-mono text-lg mb-4">
+            <div id="cronometro" data-i18n="tasks.running" class="hidden bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg text-center font-mono font-bold mb-4">⏱️ Tarea en curso...</div>
+            <button id="btn-empezar" onclick="empezarObra()" data-i18n="tasks.start" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg">▶️ Empezar Obra</button>
+            <button id="btn-terminar" onclick="terminarObra()" data-i18n="tasks.stop" class="hidden w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-3 rounded-lg">⏹️ Terminar y Enviar Horas</button>
+        </section>
+    </main>
+
+    <main id="view-admin" class="w-full max-w-4xl hidden space-y-6">
+        <section id="admin-login" class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 max-w-md mx-auto">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4" data-i18n="admin.login.title">🔒 Acceso de Gerencia</h2>
+            <input id="admin-code" type="text" data-i18n-ph="admin.login.codePh" placeholder="Código de administrador" class="w-full p-3 border rounded-lg mb-3">
+            <input id="admin-pass" type="password" data-i18n-ph="admin.login.passPh" placeholder="Contraseña" class="w-full p-3 border rounded-lg mb-3">
+            <button onclick="iniciarSesionAdmin()" data-i18n="admin.login.enter" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-bold p-3 rounded-lg">Entrar al panel</button>
+        </section>
+        <section id="admin-panel" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.reports.title">📊 Informes y Nóminas</h2>
+                <button onclick="descargarExcel()" data-i18n="admin.reports.csv" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-lg">📥 Descargar CSV de horas</button>
+                <button onclick="cargarRegistros()" data-i18n="admin.reports.refresh" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold p-3 rounded-lg">🔄 Actualizar fichajes</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.newEmp.title">👷 Nuevo Empleado</h2>
+                <input id="new_emp_code" data-i18n-ph="admin.ph.codeEmp" placeholder="Código (ej. OP-002)" class="w-full p-2.5 border rounded-lg mb-3">
+                <input id="new_emp_name" data-i18n-ph="admin.ph.fullName" placeholder="Nombre completo" class="w-full p-2.5 border rounded-lg mb-3">
+                <input id="new_emp_pass" type="password" data-i18n-ph="admin.ph.securePass" placeholder="Contraseña segura" class="w-full p-2.5 border rounded-lg mb-3">
+                <button onclick="crearEmpleado()" data-i18n="admin.newEmp.save" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded-lg">Guardar Empleado</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 md:col-span-2">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.newClient.title">🏗️ Crear Nueva Obra / Cliente</h2>
+                <input id="new_cli_code" data-i18n-ph="admin.ph.codeProj" placeholder="Código (ej. 5481)" class="w-full p-2.5 border rounded-lg mb-3">
+                <input id="new_cli_name" data-i18n-ph="admin.ph.projName" placeholder="Nombre de la obra" class="w-full p-2.5 border rounded-lg mb-3">
+                <button onclick="crearCliente()" data-i18n="admin.newClient.save" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2.5 rounded-lg">Registrar Obra en Sistema</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.mngEmp.title">✏️ Gestionar Empleado</h2>
+                <input id="manage_emp_code" data-i18n-ph="admin.ph.empCode" placeholder="Código del empleado" class="w-full p-2.5 border rounded-lg mb-3">
+                <input id="manage_emp_name" data-i18n-ph="admin.ph.newName" placeholder="Nuevo nombre" class="w-full p-2.5 border rounded-lg mb-3">
+                <select id="manage_emp_role" class="w-full p-2.5 border rounded-lg mb-3"><option value="Worker" data-i18n="role.worker">Operario</option><option value="HR" data-i18n="role.hr">RRHH</option><option value="Admin" data-i18n="role.admin">Administrador</option></select>
+                <input id="manage_emp_pass" type="password" data-i18n-ph="admin.ph.newPassOpt" placeholder="Nueva contraseña (opcional)" class="w-full p-2.5 border rounded-lg mb-3">
+                <div class="grid grid-cols-2 gap-2"><button onclick="actualizarEmpleado()" data-i18n="admin.update" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-lg">Actualizar</button><button onclick="restablecerPassword()" data-i18n="admin.resetKey" class="bg-amber-600 hover:bg-amber-700 text-white font-bold p-2 rounded-lg">Restablecer clave</button></div>
+                <button onclick="eliminarEmpleado()" data-i18n="admin.mngEmp.delete" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-2 rounded-lg mt-2">Eliminar empleado</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.mngCli.title">✏️ Gestionar Obra / Cliente</h2>
+                <input id="manage_cli_code" data-i18n-ph="admin.ph.cliCode" placeholder="Código del cliente" class="w-full p-2.5 border rounded-lg mb-3">
+                <input id="manage_cli_name" data-i18n-ph="admin.ph.newName" placeholder="Nuevo nombre" class="w-full p-2.5 border rounded-lg mb-3">
+                <button onclick="actualizarCliente()" data-i18n="admin.mngCli.update" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-lg">Actualizar cliente</button>
+                <button onclick="eliminarCliente()" data-i18n="admin.mngCli.delete" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-2 rounded-lg mt-2">Eliminar cliente y obras</button>
+                <hr class="my-4">
+                <input id="manage_project_id" type="number" data-i18n-ph="admin.ph.projId" placeholder="ID de obra" class="w-full p-2.5 border rounded-lg mb-3">
+                <input id="manage_project_name" data-i18n-ph="admin.ph.newProjName" placeholder="Nuevo nombre de obra" class="w-full p-2.5 border rounded-lg mb-3">
+                <button onclick="actualizarObra()" data-i18n="admin.mngCli.updateProj" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 rounded-lg">Actualizar obra</button>
+                <button onclick="eliminarObra()" data-i18n="admin.mngCli.deleteProj" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-2 rounded-lg mt-2">Eliminar obra</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 md:col-span-2">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.lists.title">📋 Listados de gestión</h2>
+                <div class="grid grid-cols-2 gap-2"><button onclick="cargarEmpleados()" data-i18n="admin.lists.emps" class="bg-slate-700 hover:bg-slate-800 text-white font-bold p-2 rounded-lg">Ver empleados</button><button onclick="cargarClientes()" data-i18n="admin.lists.clients" class="bg-slate-700 hover:bg-slate-800 text-white font-bold p-2 rounded-lg">Ver obras y clientes</button></div>
+                <pre id="lista-admin" data-i18n="admin.lists.empty" class="mt-3 p-3 bg-slate-50 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">Selecciona un listado.</pre>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 md:col-span-2">
+                <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.task.title">🧾 Gestionar Tarea Registrada</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><input id="manage_task_id" type="number" data-i18n-ph="admin.ph.taskId" placeholder="ID de tarea" class="p-2.5 border rounded-lg"><input id="manage_task_minutes" type="number" min="1" data-i18n-ph="admin.ph.minutes" placeholder="Minutos" class="p-2.5 border rounded-lg"><input id="manage_task_client" data-i18n-ph="admin.ph.taskClient" placeholder="Código de obra (opcional)" class="p-2.5 border rounded-lg"></div>
+                <div class="grid grid-cols-2 gap-2 mt-3"><button onclick="actualizarTarea()" data-i18n="admin.task.update" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-lg">Actualizar tarea</button><button onclick="eliminarTarea()" data-i18n="admin.task.delete" class="bg-rose-600 hover:bg-rose-700 text-white font-bold p-2 rounded-lg">Eliminar tarea</button></div>
+            </div>
+            <div class="md:col-span-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 overflow-x-auto">
+                <table class="w-full text-sm"><thead><tr class="text-left border-b"><th class="p-2" data-i18n="table.id">ID</th><th class="p-2" data-i18n="table.date">Fecha</th><th class="p-2" data-i18n="table.employee">Empleado</th><th class="p-2" data-i18n="table.type">Tipo</th><th class="p-2" data-i18n="table.project">Obra</th><th class="p-2" data-i18n="table.duration">Duración</th></tr></thead><tbody id="tabla-registros"></tbody></table>
+            </div>
+        </section>
+    </main>
+
+    <div id="resultado" class="w-full max-w-md mt-4 p-4 rounded-xl text-center font-bold hidden shadow-md"></div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:8000' : 'https://decomol-api.onrender.com';
+        const adminTokenKey = 'nexus_admin_token';
+
+        function authHeaders(token = localStorage.getItem(adminTokenKey)) {
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        }
+        function mostrarMensaje(texto, tipo = 'success') {
+            const res = document.getElementById('resultado');
+            res.className = `w-full max-w-md mt-4 p-4 rounded-xl text-center font-bold shadow-md ${tipo === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`;
+            res.innerText = texto;
+            res.classList.remove('hidden');
+            setTimeout(() => res.classList.add('hidden'), 5000);
+        }
+        function cambiarVista(vista) {
+            document.getElementById('view-worker').classList.toggle('hidden', vista !== 'worker');
+            document.getElementById('view-admin').classList.toggle('hidden', vista !== 'admin');
+            if (vista === 'admin' && localStorage.getItem(adminTokenKey)) mostrarPanelAdmin();
+        }
+        async function ficharTaller(tipo) {
+            const emp = document.getElementById('emp').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+            const token = localStorage.getItem('pulsera_vip');
+            if (!emp || (!pass && !token)) return mostrarMensaje(t('msg.enterCodePass'), 'error');
+            const params = new URLSearchParams({ employee_code: emp, entry_type: tipo, location: 'Taller' });
+            if (pass) params.set('password', pass);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/time/clock?${params}`, { method: 'POST', headers: token && !pass ? authHeaders(token) : {} });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || t('msg.badCreds'));
+                mostrarMensaje(data.mensaje);
+                document.getElementById('pass').value = '';
+                if (data.token) { localStorage.setItem('pulsera_vip', data.token); localStorage.setItem('empleado_actual', emp); actualizarEstadoVIP(true); }
+            } catch (error) { mostrarMensaje(error.message || t('msg.connError'), 'error'); }
+        }
+        function actualizarEstadoVIP(activo) {
+            document.getElementById('badge-vip').classList.toggle('hidden', !activo);
+            document.getElementById('logout-section').classList.toggle('hidden', !activo);
+            document.getElementById('password-section').classList.toggle('hidden', activo);
+        }
+        function cerrarSesionVIP() { localStorage.removeItem('pulsera_vip'); localStorage.removeItem('empleado_actual'); actualizarEstadoVIP(false); mostrarMensaje(t('msg.sessionClosed')); }
+        function empezarObra() {
+            const cli = document.getElementById('cli').value.trim();
+            if (cli.length < 4) return mostrarMensaje(t('msg.codeMin4'), 'error');
+            if (!localStorage.getItem('pulsera_vip')) return mostrarMensaje(t('msg.loginFirst'), 'error');
+            localStorage.setItem('tarea_activa', JSON.stringify({ obra: cli, horaInicio: Date.now() })); activarModoTrabajando(cli); mostrarMensaje(t('msg.timerStarted'));
+        }
+        async function terminarObra() {
+            const emp = document.getElementById('emp').value.trim();
+            const tarea = JSON.parse(localStorage.getItem('tarea_activa') || 'null');
+            const token = localStorage.getItem('pulsera_vip');
+            if (!emp || !tarea || !token) return mostrarMensaje(t('msg.noActiveTask'), 'error');
+            const minutos = Math.max(1, Math.round((Date.now() - tarea.horaInicio) / 60000));
+            const params = new URLSearchParams({ employee_code: emp, client_code: tarea.obra, duration_minutes: minutos });
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/time/task?${params}`, { method: 'POST', headers: authHeaders(token) });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || t('msg.taskNotSaved'));
+                mostrarMensaje(t('msg.hoursLogged', { min: minutos, code: tarea.obra })); localStorage.removeItem('tarea_activa'); desactivarModoTrabajando();
+            } catch (error) { mostrarMensaje(error.message, 'error'); if (error.message.includes('Token')) cerrarSesionVIP(); }
+        }
+        function activarModoTrabajando(obra) { document.getElementById('cli').value = obra; document.getElementById('cli').disabled = true; document.getElementById('btn-empezar').classList.add('hidden'); document.getElementById('btn-terminar').classList.remove('hidden'); document.getElementById('cronometro').classList.remove('hidden'); }
+        function desactivarModoTrabajando() { document.getElementById('cli').value = ''; document.getElementById('cli').disabled = false; document.getElementById('btn-empezar').classList.remove('hidden'); document.getElementById('btn-terminar').classList.add('hidden'); document.getElementById('cronometro').classList.add('hidden'); }
+        async function iniciarSesionAdmin() {
+            const params = new URLSearchParams({ employee_code: document.getElementById('admin-code').value.trim(), password: document.getElementById('admin-pass').value });
+            try { const response = await fetch(`${API_BASE_URL}/api/v1/auth/login?${params}`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || t('msg.adminDenied')); localStorage.setItem(adminTokenKey, data.token); mostrarPanelAdmin(); mostrarMensaje(t('msg.adminGranted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        function mostrarPanelAdmin() { document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden'); cargarRegistros(); }
+        async function adminFetch(url, options = {}) { const response = await fetch(url, { ...options, headers: { ...authHeaders(), ...(options.headers || {}) } }); if (response.status === 401 || response.status === 403) { localStorage.removeItem(adminTokenKey); throw new Error(t('msg.adminSessionInvalid')); } return response; }
+        async function crearEmpleado() {
+            const params = new URLSearchParams({ employee_code: document.getElementById('new_emp_code').value.trim(), full_name: document.getElementById('new_emp_name').value.trim(), password: document.getElementById('new_emp_pass').value });
+            try { const response = await adminFetch(`${API_BASE_URL}/api/v1/users/create?${params}`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || t('msg.empCreatedErr')); mostrarMensaje(data.mensaje); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function crearCliente() {
+            const params = new URLSearchParams({ client_code: document.getElementById('new_cli_code').value.trim(), name: document.getElementById('new_cli_name').value.trim() });
+            try { const response = await adminFetch(`${API_BASE_URL}/api/v1/projects/client?${params}`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || t('msg.projCreatedErr')); mostrarMensaje(data.mensaje); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function adminJson(url, method, values = {}) {
+            const params = new URLSearchParams(values);
+            const response = await adminFetch(`${url}${params.toString() ? `?${params}` : ''}`, { method });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || data.message || data.mensaje || t('msg.opNotCompleted'));
+            return data;
+        }
+        function adminValue(id) { return document.getElementById(id).value.trim(); }
+        async function actualizarEmpleado() {
+            try { await adminJson(`${API_BASE_URL}/api/v1/users/${encodeURIComponent(adminValue('manage_emp_code'))}`, 'PUT', { full_name: adminValue('manage_emp_name'), role: document.getElementById('manage_emp_role').value }); mostrarMensaje(t('msg.empUpdated')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function restablecerPassword() {
+            try { await adminJson(`${API_BASE_URL}/api/v1/users/${encodeURIComponent(adminValue('manage_emp_code'))}/reset-password`, 'PUT', { new_password: document.getElementById('manage_emp_pass').value }); mostrarMensaje(t('msg.passReset')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function eliminarEmpleado() {
+            if (!window.confirm(t('msg.confirmDelEmp'))) return;
+            try { await adminJson(`${API_BASE_URL}/api/v1/users/${encodeURIComponent(adminValue('manage_emp_code'))}`, 'DELETE'); mostrarMensaje(t('msg.empDeleted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function actualizarCliente() {
+            try { await adminJson(`${API_BASE_URL}/api/v1/projects/client/${encodeURIComponent(adminValue('manage_cli_code'))}`, 'PUT', { name: adminValue('manage_cli_name') }); mostrarMensaje(t('msg.clientUpdated')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function eliminarCliente() {
+            if (!window.confirm(t('msg.confirmDelClient'))) return;
+            try { await adminJson(`${API_BASE_URL}/api/v1/projects/client/${encodeURIComponent(adminValue('manage_cli_code'))}`, 'DELETE'); mostrarMensaje(t('msg.clientDeleted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function actualizarObra() {
+            try { await adminJson(`${API_BASE_URL}/api/v1/projects/project/${adminValue('manage_project_id')}`, 'PUT', { name: adminValue('manage_project_name'), client_code: adminValue('manage_cli_code') }); mostrarMensaje(t('msg.projUpdated')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function eliminarObra() {
+            if (!window.confirm(t('msg.confirmDelProj'))) return;
+            try { await adminJson(`${API_BASE_URL}/api/v1/projects/project/${adminValue('manage_project_id')}`, 'DELETE'); mostrarMensaje(t('msg.projDeleted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function actualizarTarea() {
+            try { await adminJson(`${API_BASE_URL}/api/v1/time/task/${adminValue('manage_task_id')}`, 'PUT', { duration_minutes: adminValue('manage_task_minutes'), client_code: adminValue('manage_task_client') }); mostrarMensaje(t('msg.taskUpdated')); cargarRegistros(); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function eliminarTarea() {
+            if (!window.confirm(t('msg.confirmDelTask'))) return;
+            try { await adminJson(`${API_BASE_URL}/api/v1/time/task/${adminValue('manage_task_id')}`, 'DELETE'); mostrarMensaje(t('msg.taskDeleted')); cargarRegistros(); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function cargarEmpleados() {
+            try { const response = await adminFetch(`${API_BASE_URL}/api/v1/users`); const data = await response.json(); document.getElementById('lista-admin').textContent = data.map(user => `${user.employee_code} | ${user.full_name} | ${user.role}`).join('\n') || t('msg.noEmployees'); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function cargarClientes() {
+            try { const response = await adminFetch(`${API_BASE_URL}/api/v1/projects/clients`); const data = await response.json(); document.getElementById('lista-admin').textContent = data.map(client => `${client.client_code} | ${client.name}\n  ${client.projects.map(project => `ID ${project.id}: ${project.name}`).join('\n  ')}`).join('\n') || t('msg.noClients'); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function cargarRegistros() {
+            try { const response = await adminFetch(`${API_BASE_URL}/api/v1/time/entries`); const registros = await response.json(); document.getElementById('tabla-registros').innerHTML = registros.map(reg => `<tr class="border-b"><td class="p-2">${reg.id}</td><td class="p-2">${new Date(reg.timestamp).toLocaleString(currentLocale())}</td><td class="p-2">${reg.employee_code || '-'}</td><td class="p-2">${reg.entry_type}</td><td class="p-2">${reg.project_id || '-'}</td><td class="p-2">${reg.duration_minutes || '-'} min</td></tr>`).join(''); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        function descargarExcel() { adminFetch(`${API_BASE_URL}/api/v1/time/export/excel`).then(response => { if (!response.ok) throw new Error(t('msg.reportFailed')); return response.blob(); }).then(blob => { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'informe_horas_nexusmold_cloud.csv'; link.click(); }).catch(error => mostrarMensaje(error.message, 'error')); }
+        window.onload = () => { const emp = localStorage.getItem('empleado_actual'); if (emp) document.getElementById('emp').value = emp; if (localStorage.getItem('pulsera_vip')) actualizarEstadoVIP(true); const tarea = JSON.parse(localStorage.getItem('tarea_activa') || 'null'); if (tarea) activarModoTrabajando(tarea.obra); };
+    </script>
+    <script>
+    // ===== NexusMold Cloud - Modo App (PWA) =====
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+            // Cuando el navegador active una versión nueva del service worker,
+            // recarga una vez para que el usuario vea siempre la última versión.
+            let swRefreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (swRefreshing) return;
+                swRefreshing = true;
+                window.location.reload();
+            });
+        });
+    }
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById('btn-install-app');
+        if (btn) btn.classList.remove('hidden');
+    });
+    function instalarApp() {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.finally(() => {
+            deferredInstallPrompt = null;
+            const btn = document.getElementById('btn-install-app');
+            if (btn) btn.classList.add('hidden');
+        });
+    }
+    // Indicador de conexión: avisa cuando no hay red
+    function actualizarIndicadorRed() {
+        const el = document.getElementById('offline-badge');
+        if (el) el.classList.toggle('hidden', navigator.onLine);
+    }
+    window.addEventListener('online', actualizarIndicadorRed);
+    window.addEventListener('offline', actualizarIndicadorRed);
+    document.addEventListener('DOMContentLoaded', actualizarIndicadorRed);
+</script>
+</body>
+</html>

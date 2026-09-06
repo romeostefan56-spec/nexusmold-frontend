@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="admin2.title">NEXUSMOLD CLOUD - Panel de Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="i18n.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    </style>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NexusMold">
+</head>
+<body class="text-gray-800">
+    <div id="offline-badge" data-i18n="net.offline" class="hidden fixed top-2 left-1/2 transform -translate-x-1/2 z-50 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">⚠️ Sin conexión</div>
+    <div id="message_box" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-xl text-white font-bold z-50 transition-all"></div>
+
+    <header class="bg-gray-900 text-white shadow-lg py-4 px-6 md:px-12 flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight">NEXUSMOLD CLOUD ADMIN</h1>
+            <p class="text-gray-400 text-sm" data-i18n="admin2.subtitle">Panel de Control de Recursos Humanos</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="index.html" data-i18n="admin2.goClock" class="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition">Ir a Fichar</a>
+            <select data-i18n-selector onchange="setLang(this.value)" aria-label="Language / Idioma / Langue / Sprache / Lingua" class="bg-gray-700 text-white text-xs rounded-md px-2 py-2 outline-none cursor-pointer">
+                <option value="es">ES</option><option value="en">EN</option><option value="fr">FR</option><option value="de">DE</option><option value="it">IT</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-1 space-y-8">
+            <section class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                <h2 class="text-xl font-bold mb-4 flex items-center text-gray-700" data-i18n="admin2.reset.title">Restablecer Contraseña</h2>
+                <p class="text-sm text-gray-500 mb-4" data-i18n="admin2.reset.note">Usa esta herramienta si un trabajador ha olvidado su clave.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1" data-i18n="admin2.empCode">Código Empleado:</label>
+                        <input type="text" id="reset_emp_code" data-i18n-ph="login.empCode.ph" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: OP-001">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1" data-i18n="admin2.newPass">Nueva Contraseña:</label>
+                        <input type="password" id="reset_new_password" data-i18n-ph="admin2.newPassPh" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nueva clave">
+                    </div>
+                    <button onclick="cambiarPassword()" data-i18n="admin2.changePass" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition shadow">Cambiar Contraseña</button>
+                </div>
+            </section>
+        </div>
+
+        <div class="lg:col-span-2">
+            <section class="bg-white rounded-xl shadow-md p-6 border border-gray-100 h-full">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-2">
+                    <h2 class="text-xl font-bold text-gray-700" data-i18n="admin2.latest">Últimos Fichajes (Tiempo Real)</h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="cargarRegistros()" data-i18n="admin.update" class="text-blue-600 hover:text-blue-800 flex items-center text-sm font-semibold">Actualizar</button>
+                        <button onclick="descargarExcel()" data-i18n="admin2.downloadExcel" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold shadow-sm transition">📊 Descargar Excel</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm border-b">
+                                <th class="p-3 font-semibold" data-i18n="admin2.th.date">Fecha y Hora</th>
+                                <th class="p-3 font-semibold" data-i18n="table.employee">Empleado</th>
+                                <th class="p-3 font-semibold" data-i18n="table.type">Tipo</th>
+                                <th class="p-3 font-semibold" data-i18n="admin2.th.client">Cliente/Obra</th>
+                                <th class="p-3 font-semibold text-right" data-i18n="table.duration">Duración</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla_registros" class="divide-y divide-gray-100 text-sm">
+                            <tr><td colspan="5" data-i18n="msg2.loading" class="p-8 text-center text-gray-400">Cargando registros...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = "https://decomol-api.onrender.com";
+
+        function mostrarMensaje(texto, esError) {
+            const box = document.getElementById('message_box');
+            box.textContent = texto;
+            box.className = `fixed top-4 left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-xl text-white font-bold z-50 transition-all duration-300 ${esError ? 'bg-red-500' : 'bg-green-600'}`;
+            box.classList.remove('hidden');
+            setTimeout(() => box.classList.add('hidden'), 4000);
+        }
+
+        async function cambiarPassword() {
+            const empCode = document.getElementById('reset_emp_code').value.trim();
+            const newPass = document.getElementById('reset_new_password').value.trim();
+            if (!empCode || !newPass) {
+                mostrarMensaje(t('msg2.fillBoth'), true);
+                return;
+            }
+
+            const url = `${API_BASE_URL}/api/v1/users/${encodeURIComponent(empCode)}/reset-password?new_password=${encodeURIComponent(newPass)}`;
+            try {
+                const response = await fetch(url, { method: 'PUT' });
+                const data = await response.json();
+                if (!response.ok) {
+                    mostrarMensaje(data.detail || t('msg2.passChangeErr'), true);
+                } else {
+                    mostrarMensaje(t('msg2.passChanged'), false);
+                    document.getElementById('reset_emp_code').value = '';
+                    document.getElementById('reset_new_password').value = '';
+                }
+            } catch (error) {
+                mostrarMensaje(t('msg2.netError'), true);
+            }
+        }
+
+        async function cargarRegistros() {
+            const tbody = document.getElementById('tabla_registros');
+            tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500 animate-pulse">${t('msg2.loadingData')}</td></tr>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/time/entries`);
+                if (!response.ok) throw new Error(t('msg2.fetchFailed'));
+                const registros = await response.json();
+                tbody.innerHTML = '';
+                if (registros.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">${t('msg2.noRecords')}</td></tr>`;
+                    return;
+                }
+
+                registros.forEach(reg => {
+                    const fecha = new Date(reg.timestamp).toLocaleString(currentLocale(), { dateStyle: 'short', timeStyle: 'short' });
+                    let badgeClass = "bg-gray-100 text-gray-800";
+                    if (reg.entry_type === 'CLOCK_IN') badgeClass = "bg-green-100 text-green-800 border border-green-200";
+                    if (reg.entry_type === 'CLOCK_OUT') badgeClass = "bg-red-100 text-red-800 border border-red-200";
+                    if (reg.entry_type === 'TASK') badgeClass = "bg-blue-100 text-blue-800 border border-blue-200";
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-3 whitespace-nowrap">${fecha}</td>
+                        <td class="p-3 font-medium text-gray-900">${reg.employee_code || reg.user_id || '-'}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-bold ${badgeClass}">${reg.entry_type}</span></td>
+                        <td class="p-3">${reg.client_code || reg.project_id || '-'}</td>
+                        <td class="p-3 text-right font-mono">${reg.duration_minutes ? reg.duration_minutes + ' min' : '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-bold">${t('msg2.serverConnErr')}</td></tr>`;
+            }
+        }
+
+        function descargarExcel() {
+            window.open(`${API_BASE_URL}/api/v1/time/export/excel`);
+        }
+
+        window.onload = cargarRegistros;
+    </script>
+    <script>
+    // ===== NexusMold Cloud - Modo App (PWA) =====
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+            // Cuando el navegador active una versión nueva del service worker,
+            // recarga una vez para que el usuario vea siempre la última versión.
+            let swRefreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (swRefreshing) return;
+                swRefreshing = true;
+                window.location.reload();
+            });
+        });
+    }    // Indicador de conexión: avisa cuando no hay red
+    function actualizarIndicadorRed() {
+        const el = document.getElementById('offline-badge');
+        if (el) el.classList.toggle('hidden', navigator.onLine);
+    }
+    window.addEventListener('online', actualizarIndicadorRed);
+    window.addEventListener('offline', actualizarIndicadorRed);
+    document.addEventListener('DOMContentLoaded', actualizarIndicadorRed);
+</script>
+</body>
+</html>
