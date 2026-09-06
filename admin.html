@@ -104,8 +104,10 @@
             }
 
             const url = `${API_BASE_URL}/api/v1/users/${encodeURIComponent(empCode)}/reset-password?new_password=${encodeURIComponent(newPass)}`;
+            const adminToken = localStorage.getItem('nexus_admin_token');
+            const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
             try {
-                const response = await fetch(url, { method: 'PUT' });
+                const response = await fetch(url, { method: 'PUT', headers });
                 const data = await response.json();
                 if (!response.ok) {
                     mostrarMensaje(data.detail || t('msg2.passChangeErr'), true);
