@@ -1,5 +1,5 @@
 /* NexusMold Cloud - Service Worker (v3) */
-const VERSION = 'nexusmold-v3';
+const VERSION = 'nexusmold-v4';
 const SHELL_CACHE = VERSION + '-shell';
 const CDN_CACHE = VERSION + '-cdn';
 const SHELL_FILES = [
