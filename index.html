@@ -68,6 +68,17 @@
             <button id="btn-empezar" onclick="empezarObra()" data-i18n="tasks.start" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg">▶️ Empezar Obra</button>
             <button id="btn-terminar" onclick="terminarObra()" data-i18n="tasks.stop" class="hidden w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-3 rounded-lg">⏹️ Terminar y Enviar Horas</button>
         </section>
+
+        <section id="mis-fichajes-section" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4" data-i18n="myDay.title">📋 Mis Fichajes</h2>
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="cambiarDiaMisFichajes(-1)" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">←</button>
+                <span id="mis-fichajes-fecha" class="font-bold text-slate-900"></span>
+                <button onclick="cambiarDiaMisFichajes(1)" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">→</button>
+            </div>
+            <div id="mis-fichajes-lista" class="divide-y divide-slate-100"></div>
+            <p id="mis-fichajes-vacio" data-i18n="myDay.empty" class="hidden text-center text-sm text-slate-400 py-4">Sin fichajes este día.</p>
+        </section>
     </main>
 
     <main id="view-admin" class="w-full max-w-4xl hidden space-y-6">
@@ -83,6 +94,19 @@
                 <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.reports.title">📊 Informes y Nóminas</h2>
                 <button onclick="descargarExcel()" data-i18n="admin.reports.csv" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-lg">📥 Descargar CSV de horas</button>
                 <button onclick="cargarRegistros()" data-i18n="admin.reports.refresh" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold p-3 rounded-lg">🔄 Actualizar fichajes</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+                <h2 class="text-lg font-bold border-b pb-3 mb-1" data-i18n="admin.geo.title">📍 Geovalla de Fichaje</h2>
+                <p class="text-xs text-slate-500 mb-4" data-i18n="admin.geo.note">Exige que el trabajador esté físicamente en la empresa para poder fichar.</p>
+                <div id="admin-geo-estado" class="text-xs mb-3 p-2 rounded-lg bg-slate-50 text-slate-500" data-i18n="admin.geo.loading">Cargando estado...</div>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <input id="geo_lat" type="number" step="any" data-i18n-ph="admin.geo.latPh" placeholder="Latitud" class="p-2.5 border rounded-lg">
+                    <input id="geo_lon" type="number" step="any" data-i18n-ph="admin.geo.lonPh" placeholder="Longitud" class="p-2.5 border rounded-lg">
+                </div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="admin.geo.radiusLabel">Radio permitido (metros)</label>
+                <input id="geo_radius" type="number" min="20" max="5000" value="150" class="w-full p-2.5 border rounded-lg mb-3">
+                <button onclick="usarMiUbicacionActual()" data-i18n="admin.geo.useMyLocation" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold p-2.5 rounded-lg mb-2">📍 Usar mi ubicación actual</button>
+                <button onclick="guardarGeovalla()" data-i18n="admin.geo.save" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded-lg">Guardar Geovalla</button>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
                 <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.newEmp.title">👷 Nuevo Empleado</h2>
@@ -155,12 +179,26 @@
             document.getElementById('view-admin').classList.toggle('hidden', vista !== 'admin');
             if (vista === 'admin' && localStorage.getItem(adminTokenKey)) mostrarPanelAdmin();
         }
+        function obtenerGeolocalizacion() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error(t('msg.geoNotSupported')));
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+                    (err) => reject(new Error(err.code === 1 ? t('msg.geoDenied') : t('msg.geoError'))),
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            });
+        }
         async function ficharTaller(tipo) {
             const emp = document.getElementById('emp').value.trim();
             const pass = document.getElementById('pass').value.trim();
             const token = localStorage.getItem('pulsera_vip');
             if (!emp || (!pass && !token)) return mostrarMensaje(t('msg.enterCodePass'), 'error');
-            const compW = (document.getElementById('company-code')?.value || '').trim(); if (!compW) return mostrarMensaje(t('msg.companyRequired'), 'error'); const params = new URLSearchParams({ employee_code: emp, entry_type: tipo, location: 'Taller', company_code: compW });
+            const compW = (document.getElementById('company-code')?.value || '').trim(); if (!compW) return mostrarMensaje(t('msg.companyRequired'), 'error');
+            mostrarMensaje(t('msg.geoRequesting'));
+            let geo;
+            try { geo = await obtenerGeolocalizacion(); } catch (error) { return mostrarMensaje(error.message, 'error'); }
+            const params = new URLSearchParams({ employee_code: emp, entry_type: tipo, location: 'Taller', company_code: compW, latitude: geo.latitude, longitude: geo.longitude });
             if (pass) params.set('password', pass);
             try {
                 const response = await fetch(`${API_BASE_URL}/api/v1/time/clock?${params}`, { method: 'POST', headers: token && !pass ? authHeaders(token) : {} });
@@ -169,7 +207,79 @@
                 mostrarMensaje(data.mensaje);
                 document.getElementById('pass').value = '';
                 if (data.token) { localStorage.setItem('pulsera_vip', data.token); localStorage.setItem('empleado_actual', emp); actualizarEstadoVIP(true); }
+                cargarMisFichajes();
             } catch (error) { mostrarMensaje(error.message || t('msg.connError'), 'error'); }
+        }
+        // ===== Mis Fichajes (historial diario del trabajador) =====
+        let misFichajesFecha = new Date();
+        const fmtFecha = (d) => d.toISOString().slice(0, 10);
+        const fmtFechaLocal = (d) => d.toLocaleDateString(currentLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        async function cargarMisFichajes() {
+            const token = localStorage.getItem('pulsera_vip');
+            const seccion = document.getElementById('mis-fichajes-section');
+            if (!token) { seccion.classList.add('hidden'); return; }
+            seccion.classList.remove('hidden');
+            document.getElementById('mis-fichajes-fecha').textContent = fmtFechaLocal(misFichajesFecha);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/time/me/day?date=${encodeURIComponent(fmtFecha(misFichajesFecha))}`, { headers: authHeaders(token) });
+                const data = await response.json();
+                if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : t('msg.connError'));
+                const lista = document.getElementById('mis-fichajes-lista');
+                const vacio = document.getElementById('mis-fichajes-vacio');
+                lista.innerHTML = '';
+                vacio.classList.toggle('hidden', data.fichajes.length > 0);
+                for (const f of data.fichajes) {
+                    const fila = document.createElement('div');
+                    fila.className = 'flex items-center justify-between py-2 text-sm';
+                    const esEntrada = f.tipo === 'CLOCK_IN';
+                    fila.innerHTML = `<span class="font-bold ${esEntrada ? 'text-emerald-700' : 'text-rose-700'}">${esEntrada ? '🟢' : '🔴'} ${esEntrada ? t('myDay.in') : t('myDay.out')}</span>` +
+                        (f.tipo === 'TASK' ? `<span class="font-bold text-blue-700">🏗️ ${t('myDay.task')}</span>` : '') +
+                        `<span class="text-slate-500 font-mono">${f.hora}</span>`;
+                    lista.appendChild(fila);
+                }
+            } catch (error) { document.getElementById('mis-fichajes-vacio').classList.remove('hidden'); }
+        }
+        function cambiarDiaMisFichajes(delta) { misFichajesFecha.setDate(misFichajesFecha.getDate() + delta); cargarMisFichajes(); }
+
+        // ===== Geovalla admin =====
+        async function cargarEstadoGeovalla() {
+            const estado = document.getElementById('admin-geo-estado');
+            try {
+                const response = await adminFetch(`${API_BASE_URL}/api/v1/companies/location`);
+                const data = await response.json();
+                if (data.geovalla_activa) {
+                    estado.className = 'text-xs mb-3 p-2 rounded-lg bg-emerald-50 text-emerald-700 font-semibold';
+                    estado.textContent = `✅ ${t('admin.geo.active')} (${data.geofence_radius_m} m)`;
+                    document.getElementById('geo_lat').value = data.latitude;
+                    document.getElementById('geo_lon').value = data.longitude;
+                    document.getElementById('geo_radius').value = data.geofence_radius_m;
+                } else {
+                    estado.className = 'text-xs mb-3 p-2 rounded-lg bg-amber-50 text-amber-700 font-semibold';
+                    estado.textContent = `⚠️ ${t('admin.geo.inactive')}`;
+                }
+            } catch (error) { estado.textContent = t('msg.connError'); }
+        }
+        function usarMiUbicacionActual() {
+            if (!navigator.geolocation) return mostrarMensaje(t('msg.geoNotSupported'), 'error');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => { document.getElementById('geo_lat').value = pos.coords.latitude; document.getElementById('geo_lon').value = pos.coords.longitude; mostrarMensaje(t('msg.geoObtained')); },
+                () => mostrarMensaje(t('msg.geoError'), 'error'),
+                { enableHighAccuracy: true, timeout: 15000 }
+            );
+        }
+        async function guardarGeovalla() {
+            const lat = parseFloat(document.getElementById('geo_lat').value);
+            const lon = parseFloat(document.getElementById('geo_lon').value);
+            const radio = parseInt(document.getElementById('geo_radius').value, 10);
+            if (isNaN(lat) || isNaN(lon)) return mostrarMensaje(t('msg.geoCoordsRequired'), 'error');
+            if (isNaN(radio) || radio < 20 || radio > 5000) return mostrarMensaje(t('msg.geoRadiusInvalid'), 'error');
+            const params = new URLSearchParams({ latitude: lat, longitude: lon, radius_meters: radio });
+            try {
+                const response = await adminFetch(`${API_BASE_URL}/api/v1/companies/location?${params}`, { method: 'PATCH' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : t('msg.opNotCompleted'));
+                mostrarMensaje(data.mensaje); cargarEstadoGeovalla();
+            } catch (error) { mostrarMensaje(error.message, 'error'); }
         }
         function actualizarEstadoVIP(activo) {
             document.getElementById('badge-vip').classList.toggle('hidden', !activo);
@@ -203,7 +313,7 @@
             const compA = (document.getElementById('admin-company')?.value || '').trim(); if (!compA) return mostrarMensaje(t('msg.companyRequired'), 'error'); const params = new URLSearchParams({ employee_code: document.getElementById('admin-code').value.trim(), password: document.getElementById('admin-pass').value, company_code: compA });
             try { const response = await fetch(`${API_BASE_URL}/api/v1/auth/login?${params}`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || t('msg.adminDenied')); localStorage.setItem(adminTokenKey, data.token); mostrarPanelAdmin(); mostrarMensaje(t('msg.adminGranted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
         }
-        function mostrarPanelAdmin() { document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden'); cargarRegistros(); }
+        function mostrarPanelAdmin() { document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden'); cargarRegistros(); cargarEstadoGeovalla(); }
         async function adminFetch(url, options = {}) { const response = await fetch(url, { ...options, headers: { ...authHeaders(), ...(options.headers || {}) } }); if (response.status === 401 || response.status === 403) { localStorage.removeItem(adminTokenKey); throw new Error(t('msg.adminSessionInvalid')); } return response; }
         async function crearEmpleado() {
             const params = new URLSearchParams({ employee_code: document.getElementById('new_emp_code').value.trim(), full_name: document.getElementById('new_emp_name').value.trim(), password: document.getElementById('new_emp_pass').value });
@@ -262,7 +372,7 @@
             try { const response = await adminFetch(`${API_BASE_URL}/api/v1/time/entries`); const registros = await response.json(); document.getElementById('tabla-registros').innerHTML = registros.map(reg => `<tr class="border-b"><td class="p-2">${reg.id}</td><td class="p-2">${new Date(reg.timestamp).toLocaleString(currentLocale())}</td><td class="p-2">${reg.employee_code || '-'}</td><td class="p-2">${reg.entry_type}</td><td class="p-2">${reg.project_id || '-'}</td><td class="p-2">${reg.duration_minutes || '-'} min</td></tr>`).join(''); } catch (error) { mostrarMensaje(error.message, 'error'); }
         }
         function descargarExcel() { adminFetch(`${API_BASE_URL}/api/v1/time/export/excel`).then(response => { if (!response.ok) throw new Error(t('msg.reportFailed')); return response.blob(); }).then(blob => { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'informe_horas_nexusmold_cloud.csv'; link.click(); }).catch(error => mostrarMensaje(error.message, 'error')); }
-        window.onload = () => { const emp = localStorage.getItem('empleado_actual'); if (emp) document.getElementById('emp').value = emp; if (localStorage.getItem('pulsera_vip')) actualizarEstadoVIP(true); const tarea = JSON.parse(localStorage.getItem('tarea_activa') || 'null'); if (tarea) activarModoTrabajando(tarea.obra); };
+        window.onload = () => { const emp = localStorage.getItem('empleado_actual'); if (emp) document.getElementById('emp').value = emp; if (localStorage.getItem('pulsera_vip')) actualizarEstadoVIP(true); const tarea = JSON.parse(localStorage.getItem('tarea_activa') || 'null'); if (tarea) activarModoTrabajando(tarea.obra); cargarMisFichajes(); };
     </script>
     <script>
     // ===== NexusMold Cloud - Modo App (PWA) =====
