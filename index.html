@@ -161,7 +161,7 @@
     <div id="resultado" class="w-full max-w-md mt-4 p-4 rounded-xl text-center font-bold hidden shadow-md"></div>
 
     <script>
-        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:8000' : 'https://decomol-api.onrender.com';
+        const API_BASE_URL = window.location.hostname.endsWith('github.io') ? 'https://decomol-api.onrender.com' : (window.location.protocol === 'file:' || window.location.port === '5500') ? 'http://127.0.0.1:8000' : window.location.origin; // GitHub Pages -> Render; servido por la API (Docker/ngrok) -> misma direccion;
         const adminTokenKey = 'nexus_admin_token';
 
         function authHeaders(token = localStorage.getItem(adminTokenKey)) {

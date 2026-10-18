@@ -85,7 +85,7 @@
     </main>
 
     <script>
-        const API_BASE_URL = "https://decomol-api.onrender.com";
+        const API_BASE_URL = window.location.hostname.endsWith('github.io') ? 'https://decomol-api.onrender.com' : (window.location.protocol === 'file:' || window.location.port === '5500') ? 'http://127.0.0.1:8000' : window.location.origin; // GitHub Pages -> Render; servido por la API (Docker/ngrok) -> misma direccion;
 
         function mostrarMensaje(texto, esError) {
             const box = document.getElementById('message_box');
