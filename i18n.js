@@ -975,3 +975,80 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     Object.keys(T).forEach(lang => { if (I18N[lang]) Object.assign(I18N[lang], T[lang]); });
 })();
+
+
+// ===== Horarios, horas extra, avisos de hoy e informe PDF (ES / EN / FR / DE / IT) =====
+(function anadirTextosBloque3() {
+    const dias = { es: 'LMXJVSD', en: 'MTWTFSS', fr: 'LMMJVSD', de: 'MDMDFSS', it: 'LMMGVSD' };
+    const T = {
+        es: {
+            'sched.title': '🗓️ Horarios de los trabajadores', 'sched.note': 'Con el horario, la app calcula las horas extra y avisa de quien no ha fichado.',
+            'sched.start': 'Entrada', 'sched.end': 'Salida', 'sched.break': 'Pausa (min)', 'sched.save': 'Guardar horario', 'sched.remove': 'Quitar horario',
+            'sched.empty': 'Nadie tiene horario todavía.', 'sched.edit': 'Editar', 'sched.from': 'Aplica desde (opcional; si no, desde hoy)', 'sched.since': 'desde', 'sched.none': 'Sin horario asignado',
+            'sched.empRequired': 'Escribe el código del empleado', 'sched.confirmRemove': '¿Quitar el horario de este trabajador?',
+            'sum.show': '📊 Ver horas y horas extra', 'sum.csv': '📥 Excel de horas extra', 'sum.emp': 'Trabajador', 'sum.days': 'Días',
+            'sum.worked': 'Trabajadas', 'sum.expected': 'Previstas', 'sum.extra': 'Extra', 'sum.missing': 'Faltan', 'sum.absences': 'Ausencias',
+            'sum.absencesValue': '{vac} vac. · {baja} baja · {otras} otras', 'sum.period': 'Del {desde} al {hasta} (si no eliges fechas: este mes)',
+            'pdf.month': 'Mes del informe', 'pdf.download': '📄 Informe mensual (PDF)',
+            'today.pending': '📨 {n} solicitud(es) de ausencia pendientes de revisar', 'today.review': 'Revisar',
+            'today.allIn': '✅ Hoy han fichado todos los que tenían que entrar.', 'today.notIn': '⏰ {code} · {nombre}: entraba a las {hora} y aún no ha fichado',
+            'my.schedule': 'Tu horario: {horario}', 'my.month': 'Este mes: {horas} de {previstas} · extra {extra}', 'my.monthNoSchedule': 'Este mes: {horas} trabajadas',
+        },
+        en: {
+            'sched.title': '🗓️ Work schedules', 'sched.note': 'With a schedule, the app works out overtime and flags who has not clocked in.',
+            'sched.start': 'Start', 'sched.end': 'End', 'sched.break': 'Break (min)', 'sched.save': 'Save schedule', 'sched.remove': 'Remove schedule',
+            'sched.empty': 'No one has a schedule yet.', 'sched.edit': 'Edit', 'sched.from': 'Applies from (optional; otherwise from today)', 'sched.since': 'from', 'sched.none': 'No schedule assigned',
+            'sched.empRequired': 'Enter the employee code', 'sched.confirmRemove': 'Remove this worker’s schedule?',
+            'sum.show': '📊 View hours and overtime', 'sum.csv': '📥 Overtime spreadsheet', 'sum.emp': 'Worker', 'sum.days': 'Days',
+            'sum.worked': 'Worked', 'sum.expected': 'Expected', 'sum.extra': 'Overtime', 'sum.missing': 'Short', 'sum.absences': 'Absences',
+            'sum.absencesValue': '{vac} hol. · {baja} sick · {otras} other', 'sum.period': 'From {desde} to {hasta} (no dates chosen: this month)',
+            'pdf.month': 'Report month', 'pdf.download': '📄 Monthly report (PDF)',
+            'today.pending': '📨 {n} absence request(s) waiting for review', 'today.review': 'Review',
+            'today.allIn': '✅ Everyone due in today has clocked in.', 'today.notIn': '⏰ {code} · {nombre}: due at {hora} and has not clocked in yet',
+            'my.schedule': 'Your schedule: {horario}', 'my.month': 'This month: {horas} of {previstas} · overtime {extra}', 'my.monthNoSchedule': 'This month: {horas} worked',
+        },
+        fr: {
+            'sched.title': '🗓️ Horaires des salariés', 'sched.note': 'Avec l’horaire, l’app calcule les heures supplémentaires et signale qui n’a pas pointé.',
+            'sched.start': 'Arrivée', 'sched.end': 'Départ', 'sched.break': 'Pause (min)', 'sched.save': 'Enregistrer l’horaire', 'sched.remove': 'Retirer l’horaire',
+            'sched.empty': 'Personne n’a encore d’horaire.', 'sched.edit': 'Modifier', 'sched.from': 'S’applique à partir du (facultatif ; sinon aujourd’hui)', 'sched.since': 'depuis le', 'sched.none': 'Aucun horaire',
+            'sched.empRequired': 'Saisissez le code du salarié', 'sched.confirmRemove': 'Retirer l’horaire de ce salarié ?',
+            'sum.show': '📊 Voir les heures et heures sup.', 'sum.csv': '📥 Tableur des heures sup.', 'sum.emp': 'Salarié', 'sum.days': 'Jours',
+            'sum.worked': 'Travaillées', 'sum.expected': 'Prévues', 'sum.extra': 'Sup.', 'sum.missing': 'Manquantes', 'sum.absences': 'Absences',
+            'sum.absencesValue': '{vac} congés · {baja} arrêt · {otras} autres', 'sum.period': 'Du {desde} au {hasta} (sans dates : ce mois-ci)',
+            'pdf.month': 'Mois du rapport', 'pdf.download': '📄 Rapport mensuel (PDF)',
+            'today.pending': '📨 {n} demande(s) d’absence à examiner', 'today.review': 'Examiner',
+            'today.allIn': '✅ Tous ceux qui devaient arriver aujourd’hui ont pointé.', 'today.notIn': '⏰ {code} · {nombre} : arrivée prévue à {hora}, pas encore pointé',
+            'my.schedule': 'Votre horaire : {horario}', 'my.month': 'Ce mois-ci : {horas} sur {previstas} · sup. {extra}', 'my.monthNoSchedule': 'Ce mois-ci : {horas} travaillées',
+        },
+        de: {
+            'sched.title': '🗓️ Arbeitszeitpläne', 'sched.note': 'Mit dem Arbeitszeitplan berechnet die App Überstunden und meldet, wer nicht gebucht hat.',
+            'sched.start': 'Beginn', 'sched.end': 'Ende', 'sched.break': 'Pause (Min.)', 'sched.save': 'Plan speichern', 'sched.remove': 'Plan entfernen',
+            'sched.empty': 'Noch niemand hat einen Arbeitszeitplan.', 'sched.edit': 'Bearbeiten', 'sched.from': 'Gilt ab (optional; sonst ab heute)', 'sched.since': 'ab', 'sched.none': 'Kein Arbeitszeitplan',
+            'sched.empRequired': 'Mitarbeitercode eingeben', 'sched.confirmRemove': 'Arbeitszeitplan dieses Mitarbeiters entfernen?',
+            'sum.show': '📊 Stunden und Überstunden ansehen', 'sum.csv': '📥 Überstunden-Tabelle', 'sum.emp': 'Mitarbeiter', 'sum.days': 'Tage',
+            'sum.worked': 'Gearbeitet', 'sum.expected': 'Soll', 'sum.extra': 'Überstunden', 'sum.missing': 'Fehlend', 'sum.absences': 'Abwesenheiten',
+            'sum.absencesValue': '{vac} Urlaub · {baja} krank · {otras} sonstige', 'sum.period': 'Vom {desde} bis {hasta} (ohne Datum: dieser Monat)',
+            'pdf.month': 'Monat des Berichts', 'pdf.download': '📄 Monatsbericht (PDF)',
+            'today.pending': '📨 {n} offene Abwesenheitsanträge', 'today.review': 'Prüfen',
+            'today.allIn': '✅ Alle, die heute kommen sollten, haben gebucht.', 'today.notIn': '⏰ {code} · {nombre}: Beginn {hora}, noch nicht gebucht',
+            'my.schedule': 'Dein Arbeitszeitplan: {horario}', 'my.month': 'Dieser Monat: {horas} von {previstas} · Überstunden {extra}', 'my.monthNoSchedule': 'Dieser Monat: {horas} gearbeitet',
+        },
+        it: {
+            'sched.title': '🗓️ Orari dei lavoratori', 'sched.note': 'Con l’orario, l’app calcola gli straordinari e segnala chi non ha timbrato.',
+            'sched.start': 'Entrata', 'sched.end': 'Uscita', 'sched.break': 'Pausa (min)', 'sched.save': 'Salva orario', 'sched.remove': 'Rimuovi orario',
+            'sched.empty': 'Nessuno ha ancora un orario.', 'sched.edit': 'Modifica', 'sched.from': 'Valido dal (facoltativo; altrimenti da oggi)', 'sched.since': 'dal', 'sched.none': 'Nessun orario assegnato',
+            'sched.empRequired': 'Scrivi il codice del dipendente', 'sched.confirmRemove': 'Rimuovere l’orario di questo lavoratore?',
+            'sum.show': '📊 Vedi ore e straordinari', 'sum.csv': '📥 Excel degli straordinari', 'sum.emp': 'Lavoratore', 'sum.days': 'Giorni',
+            'sum.worked': 'Lavorate', 'sum.expected': 'Previste', 'sum.extra': 'Straord.', 'sum.missing': 'Mancanti', 'sum.absences': 'Assenze',
+            'sum.absencesValue': '{vac} ferie · {baja} malattia · {otras} altre', 'sum.period': 'Dal {desde} al {hasta} (senza date: questo mese)',
+            'pdf.month': 'Mese del report', 'pdf.download': '📄 Report mensile (PDF)',
+            'today.pending': '📨 {n} richiesta/e di assenza da valutare', 'today.review': 'Valuta',
+            'today.allIn': '✅ Oggi hanno timbrato tutti quelli che dovevano entrare.', 'today.notIn': '⏰ {code} · {nombre}: doveva entrare alle {hora} e non ha ancora timbrato',
+            'my.schedule': 'Il tuo orario: {horario}', 'my.month': 'Questo mese: {horas} su {previstas} · straord. {extra}', 'my.monthNoSchedule': 'Questo mese: {horas} lavorate',
+        },
+    };
+    Object.keys(T).forEach(lang => {
+        [...dias[lang]].forEach((letra, i) => { T[lang][`day.${i}`] = letra; });
+        if (I18N[lang]) Object.assign(I18N[lang], T[lang]);
+    });
+})();
