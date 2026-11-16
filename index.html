@@ -28,7 +28,7 @@
             <button onclick="cambiarVista('worker')" id="nav-worker" data-i18n="nav.worker" class="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white">📱 Fichaje Operarios</button>
             <button onclick="cambiarVista('admin')" id="nav-admin" data-i18n="nav.admin" class="px-4 py-2 rounded-md text-sm font-medium text-slate-300">📊 Panel Gerencia</button>
             <button id="btn-install-app" onclick="instalarApp()" data-i18n="install.app" class="hidden px-4 py-2 rounded-md text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white" title="Instalar NexusMold como aplicación">📲 Instalar App</button>
-            <select data-i18n-selector onchange="setLang(this.value)" aria-label="Language / Idioma / Langue / Sprache / Lingua" class="bg-slate-700 text-white text-xs rounded-md px-2 py-2 mx-1 outline-none cursor-pointer">
+            <select data-i18n-selector onchange="setLang(this.value); refrescarTextosDinamicos()" aria-label="Language / Idioma / Langue / Sprache / Lingua" class="bg-slate-700 text-white text-xs rounded-md px-2 py-2 mx-1 outline-none cursor-pointer">
                 <option value="es">ES</option><option value="en">EN</option><option value="fr">FR</option><option value="de">DE</option><option value="it">IT</option>
             </select>
         </div>
@@ -55,8 +55,14 @@
         </section>
 
         <section class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
-            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4" data-i18n="workshop.out.title">🏭 Salida de Taller</h2>
-            <button onclick="ficharTaller('CLOCK_OUT')" data-i18n="workshop.clockOut" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-lg">🔴 Fichar Salida Taller</button>
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-4" data-i18n="shift.title">🕒 Mi Jornada</h2>
+            <div id="estado-jornada" class="hidden text-sm font-semibold p-2 rounded-lg mb-3 text-center"></div>
+            <div class="space-y-2">
+                <button id="btn-entrada" onclick="ficharTaller('CLOCK_IN')" data-i18n="shift.clockIn" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-lg">🟢 Fichar Entrada</button>
+                <button id="btn-pausa-ini" onclick="ficharTaller('BREAK_START')" data-i18n="shift.breakStart" class="hidden w-full bg-amber-500 hover:bg-amber-600 text-white font-bold p-3 rounded-lg">☕ Iniciar Pausa</button>
+                <button id="btn-pausa-fin" onclick="ficharTaller('BREAK_END')" data-i18n="shift.breakEnd" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg">▶️ Volver de la Pausa</button>
+                <button id="btn-salida" onclick="ficharTaller('CLOCK_OUT')" data-i18n="workshop.clockOut" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-lg">🔴 Fichar Salida Taller</button>
+            </div>
         </section>
 
         <section class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
@@ -79,6 +85,27 @@
             <div id="mis-fichajes-lista" class="divide-y divide-slate-100"></div>
             <p id="mis-fichajes-vacio" data-i18n="myDay.empty" class="hidden text-center text-sm text-slate-400 py-4">Sin fichajes este día.</p>
         </section>
+
+        <section id="mis-ausencias-section" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 border-b pb-3 mb-3" data-i18n="abs.myTitle">🌴 Mis Vacaciones y Permisos</h2>
+            <div id="saldo-vacaciones" class="text-sm bg-emerald-50 text-emerald-800 font-semibold p-2 rounded-lg mb-4 text-center"></div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="abs.type">Tipo</label>
+            <select id="aus-tipo" class="w-full p-2.5 border rounded-lg mb-3">
+                <option value="VACACIONES" data-i18n="absType.VACACIONES">Vacaciones</option>
+                <option value="ASUNTOS_PROPIOS" data-i18n="absType.ASUNTOS_PROPIOS">Asuntos propios</option>
+                <option value="PERMISO_RETRIBUIDO" data-i18n="absType.PERMISO_RETRIBUIDO">Permiso retribuido</option>
+                <option value="OTRA" data-i18n="absType.OTRA">Otra ausencia</option>
+            </select>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <label class="text-xs font-semibold text-slate-600"><span data-i18n="admin.reports.from">Desde</span><input id="aus-desde" type="date" class="w-full p-2.5 border rounded-lg mt-1"></label>
+                <label class="text-xs font-semibold text-slate-600"><span data-i18n="admin.reports.to">Hasta</span><input id="aus-hasta" type="date" class="w-full p-2.5 border rounded-lg mt-1"></label>
+            </div>
+            <input id="aus-comentario" maxlength="200" data-i18n-ph="abs.commentPh" placeholder="Comentario (opcional)" class="w-full p-2.5 border rounded-lg mb-1">
+            <p class="text-xs text-slate-500 mb-3" data-i18n="abs.privacyNote">No escribas datos médicos: las bajas las registra gerencia.</p>
+            <button onclick="pedirAusencia()" data-i18n="abs.send" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-lg">📨 Enviar Solicitud</button>
+            <div id="mis-ausencias-lista" class="divide-y divide-slate-100 mt-4"></div>
+            <details class="mt-4 text-sm"><summary class="cursor-pointer font-semibold text-slate-700" data-i18n="hol.title">📅 Festivos de la empresa</summary><ul id="festivos-operario" class="mt-2 space-y-1 text-slate-600"></ul></details>
+        </section>
     </main>
 
     <main id="view-admin" class="w-full max-w-4xl hidden space-y-6">
@@ -90,10 +117,75 @@
             <button onclick="iniciarSesionAdmin()" data-i18n="admin.login.enter" class="w-full bg-slate-900 hover:bg-slate-700 text-white font-bold p-3 rounded-lg">Entrar al panel</button>
         </section>
         <section id="admin-panel" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-amber-300 md:col-span-2">
+                <h2 class="text-lg font-bold border-b pb-3 mb-3" data-i18n="alerts.title">⚠️ Jornadas sin cerrar</h2>
+                <div id="avisos-lista" class="text-sm space-y-2 mb-4"></div>
+                <h3 class="font-bold text-sm mb-2" data-i18n="corr.title">✍️ Añadir un fichaje olvidado</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <input id="corr-emp" data-i18n-ph="admin.ph.empCode" placeholder="Código del empleado" class="p-2.5 border rounded-lg">
+                    <select id="corr-tipo" class="p-2.5 border rounded-lg">
+                        <option value="CLOCK_OUT" data-i18n="entry.CLOCK_OUT">Salida</option>
+                        <option value="CLOCK_IN" data-i18n="entry.CLOCK_IN">Entrada</option>
+                        <option value="BREAK_START" data-i18n="entry.BREAK_START">Inicio de pausa</option>
+                        <option value="BREAK_END" data-i18n="entry.BREAK_END">Fin de pausa</option>
+                    </select>
+                    <input id="corr-fecha" type="datetime-local" class="p-2.5 border rounded-lg">
+                    <input id="corr-motivo" maxlength="200" data-i18n-ph="corr.reasonPh" placeholder="Motivo (obligatorio)" class="p-2.5 border rounded-lg">
+                </div>
+                <p class="text-xs text-slate-500 mt-2" data-i18n="corr.note">Queda marcado como corrección de gerencia en el registro y en el historial de cambios.</p>
+                <button onclick="enviarCorreccion()" data-i18n="corr.save" class="mt-2 w-full bg-amber-600 hover:bg-amber-700 text-white font-bold p-2.5 rounded-lg">Guardar corrección</button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 md:col-span-2">
+                <h2 class="text-lg font-bold border-b pb-3 mb-3" data-i18n="absAdm.title">🌴 Vacaciones, Permisos y Bajas</h2>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button onclick="cargarAusenciasAdmin('PENDIENTE')" data-i18n="absAdm.pending" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg text-sm">Pendientes</button>
+                    <button onclick="cargarAusenciasAdmin('APROBADA')" data-i18n="absAdm.approved" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-sm">Aprobadas</button>
+                    <button onclick="cargarAusenciasAdmin('')" data-i18n="absAdm.all" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-2 rounded-lg text-sm">Todas</button>
+                </div>
+                <div id="ausencias-admin-lista" class="text-sm divide-y divide-slate-100 mb-4"></div>
+                <h3 class="font-bold text-sm mb-2" data-i18n="absAdm.registerTitle">➕ Registrar baja o ausencia</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <input id="absadm-emp" data-i18n-ph="admin.ph.empCode" placeholder="Código del empleado" class="p-2.5 border rounded-lg">
+                    <select id="absadm-tipo" class="p-2.5 border rounded-lg">
+                        <option value="BAJA_ENFERMEDAD" data-i18n="absType.BAJA_ENFERMEDAD">Baja por enfermedad</option>
+                        <option value="BAJA_ACCIDENTE" data-i18n="absType.BAJA_ACCIDENTE">Baja por accidente</option>
+                        <option value="VACACIONES" data-i18n="absType.VACACIONES">Vacaciones</option>
+                        <option value="ASUNTOS_PROPIOS" data-i18n="absType.ASUNTOS_PROPIOS">Asuntos propios</option>
+                        <option value="PERMISO_RETRIBUIDO" data-i18n="absType.PERMISO_RETRIBUIDO">Permiso retribuido</option>
+                        <option value="OTRA" data-i18n="absType.OTRA">Otra ausencia</option>
+                    </select>
+                    <input id="absadm-desde" type="date" class="p-2.5 border rounded-lg">
+                    <input id="absadm-hasta" type="date" class="p-2.5 border rounded-lg">
+                </div>
+                <p class="text-xs text-slate-500 mt-2" data-i18n="absAdm.privacyNote">Nunca anotes el diagnóstico ni datos médicos (RGPD): solo el tipo y las fechas.</p>
+                <button onclick="registrarAusenciaAdmin()" data-i18n="absAdm.register" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-2.5 rounded-lg">Registrar</button>
+                <hr class="my-4">
+                <div class="flex flex-wrap items-end gap-2">
+                    <label class="text-xs font-semibold text-slate-600"><span data-i18n="absAdm.vacDays">Días laborables de vacaciones al año</span><input id="dias-vacaciones" type="number" min="1" max="60" class="block w-28 p-2.5 border rounded-lg mt-1"></label>
+                    <button onclick="guardarDiasVacaciones()" data-i18n="absAdm.saveDays" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-2.5 rounded-lg text-sm">Guardar</button>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 md:col-span-2">
+                <h2 class="text-lg font-bold border-b pb-3 mb-3" data-i18n="hol.title">📅 Festivos de la empresa</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input id="fest-fecha" type="date" class="p-2.5 border rounded-lg">
+                    <input id="fest-nombre" maxlength="80" data-i18n-ph="hol.namePh" placeholder="Nombre (ej. Fiesta local)" class="p-2.5 border rounded-lg">
+                    <button onclick="anadirFestivo()" data-i18n="hol.add" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2.5 rounded-lg">Añadir festivo</button>
+                </div>
+                <ul id="festivos-admin" class="mt-3 text-sm divide-y divide-slate-100"></ul>
+            </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
                 <h2 class="text-lg font-bold border-b pb-3 mb-4" data-i18n="admin.reports.title">📊 Informes y Nóminas</h2>
                 <button onclick="descargarExcel()" data-i18n="admin.reports.csv" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded-lg">📥 Descargar CSV de horas</button>
                 <button onclick="cargarRegistros()" data-i18n="admin.reports.refresh" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold p-3 rounded-lg">🔄 Actualizar fichajes</button>
+                <hr class="my-4">
+                <p class="text-xs text-slate-500 mb-3" data-i18n="admin.reports.journalNote">Registro diario con hora de España, para Inspección de Trabajo y gestoría.</p>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <label class="text-xs font-semibold text-slate-600"><span data-i18n="admin.reports.from">Desde</span><input id="rep_desde" type="date" class="w-full p-2.5 border rounded-lg mt-1"></label>
+                    <label class="text-xs font-semibold text-slate-600"><span data-i18n="admin.reports.to">Hasta</span><input id="rep_hasta" type="date" class="w-full p-2.5 border rounded-lg mt-1"></label>
+                </div>
+                <button onclick="descargarInformeFechas('registro-jornada', 'registro_jornada')" data-i18n="admin.reports.journal" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold p-3 rounded-lg mb-2">📄 Registro de jornada (entradas y salidas)</button>
+                <button onclick="descargarInformeFechas('cambios', 'historial_cambios')" data-i18n="admin.reports.changes" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold p-3 rounded-lg">🕵️ Historial de cambios de gerencia</button>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
                 <h2 class="text-lg font-bold border-b pb-3 mb-1" data-i18n="admin.geo.title">📍 Geovalla de Fichaje</h2>
@@ -207,12 +299,12 @@
                 mostrarMensaje(data.mensaje);
                 document.getElementById('pass').value = '';
                 if (data.token) { localStorage.setItem('pulsera_vip', data.token); localStorage.setItem('empleado_actual', emp); actualizarEstadoVIP(true); }
-                cargarMisFichajes();
+                cargarMisFichajes(); cargarEstadoJornada(); cargarMisAusencias();
             } catch (error) { mostrarMensaje(error.message || t('msg.connError'), 'error'); }
         }
         // ===== Mis Fichajes (historial diario del trabajador) =====
         let misFichajesFecha = new Date();
-        const fmtFecha = (d) => d.toISOString().slice(0, 10);
+        const fmtFecha = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const fmtFechaLocal = (d) => d.toLocaleDateString(currentLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         async function cargarMisFichajes() {
             const token = localStorage.getItem('pulsera_vip');
@@ -228,13 +320,13 @@
                 const vacio = document.getElementById('mis-fichajes-vacio');
                 lista.innerHTML = '';
                 vacio.classList.toggle('hidden', data.fichajes.length > 0);
+                const estilos = { CLOCK_IN: ['🟢', 'text-emerald-700', 'myDay.in'], CLOCK_OUT: ['🔴', 'text-rose-700', 'myDay.out'], BREAK_START: ['☕', 'text-amber-700', 'entry.BREAK_START'], BREAK_END: ['▶️', 'text-blue-700', 'entry.BREAK_END'], TASK: ['🏗️', 'text-blue-700', 'myDay.task'] };
                 for (const f of data.fichajes) {
+                    const [icono, color, clave] = estilos[f.tipo] || ['•', 'text-slate-700', f.tipo];
                     const fila = document.createElement('div');
                     fila.className = 'flex items-center justify-between py-2 text-sm';
-                    const esEntrada = f.tipo === 'CLOCK_IN';
-                    fila.innerHTML = `<span class="font-bold ${esEntrada ? 'text-emerald-700' : 'text-rose-700'}">${esEntrada ? '🟢' : '🔴'} ${esEntrada ? t('myDay.in') : t('myDay.out')}</span>` +
-                        (f.tipo === 'TASK' ? `<span class="font-bold text-blue-700">🏗️ ${t('myDay.task')}</span>` : '') +
-                        `<span class="text-slate-500 font-mono">${f.hora}</span>`;
+                    fila.appendChild(crearEl('span', `font-bold ${color}`, `${icono} ${t(clave)}${f.corregido_por_gerencia ? ' ✍️' : ''}`));
+                    fila.appendChild(crearEl('span', 'text-slate-500 font-mono', f.hora));
                     lista.appendChild(fila);
                 }
             } catch (error) { document.getElementById('mis-fichajes-vacio').classList.remove('hidden'); }
@@ -286,7 +378,7 @@
             document.getElementById('logout-section').classList.toggle('hidden', !activo);
             document.getElementById('password-section').classList.toggle('hidden', activo);
         }
-        function cerrarSesionVIP() { localStorage.removeItem('pulsera_vip'); localStorage.removeItem('empleado_actual'); actualizarEstadoVIP(false); mostrarMensaje(t('msg.sessionClosed')); }
+        function cerrarSesionVIP() { localStorage.removeItem('pulsera_vip'); localStorage.removeItem('empleado_actual'); actualizarEstadoVIP(false); cargarEstadoJornada(); cargarMisAusencias(); cargarMisFichajes(); mostrarMensaje(t('msg.sessionClosed')); }
         function empezarObra() {
             const cli = document.getElementById('cli').value.trim();
             if (cli.length < 4) return mostrarMensaje(t('msg.codeMin4'), 'error');
@@ -313,7 +405,7 @@
             const compA = (document.getElementById('admin-company')?.value || '').trim(); if (!compA) return mostrarMensaje(t('msg.companyRequired'), 'error'); const params = new URLSearchParams({ employee_code: document.getElementById('admin-code').value.trim(), password: document.getElementById('admin-pass').value, company_code: compA });
             try { const response = await fetch(`${API_BASE_URL}/api/v1/auth/login?${params}`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || t('msg.adminDenied')); localStorage.setItem(adminTokenKey, data.token); mostrarPanelAdmin(); mostrarMensaje(t('msg.adminGranted')); } catch (error) { mostrarMensaje(error.message, 'error'); }
         }
-        function mostrarPanelAdmin() { document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden'); cargarRegistros(); cargarEstadoGeovalla(); }
+        function mostrarPanelAdmin() { document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-panel').classList.remove('hidden'); cargarRegistros(); cargarEstadoGeovalla(); cargarAvisos(); cargarAusenciasAdmin('PENDIENTE'); cargarDiasVacaciones(); cargarFestivosAdmin(); }
         async function adminFetch(url, options = {}) { const response = await fetch(url, { ...options, headers: { ...authHeaders(), ...(options.headers || {}) } }); if (response.status === 401 || response.status === 403) { localStorage.removeItem(adminTokenKey); throw new Error(t('msg.adminSessionInvalid')); } return response; }
         async function crearEmpleado() {
             const params = new URLSearchParams({ employee_code: document.getElementById('new_emp_code').value.trim(), full_name: document.getElementById('new_emp_name').value.trim(), password: document.getElementById('new_emp_pass').value });
@@ -371,8 +463,185 @@
         async function cargarRegistros() {
             try { const response = await adminFetch(`${API_BASE_URL}/api/v1/time/entries`); const registros = await response.json(); document.getElementById('tabla-registros').innerHTML = registros.map(reg => `<tr class="border-b"><td class="p-2">${reg.id}</td><td class="p-2">${new Date(reg.timestamp).toLocaleString(currentLocale())}</td><td class="p-2">${reg.employee_code || '-'}</td><td class="p-2">${reg.entry_type}</td><td class="p-2">${reg.project_id || '-'}</td><td class="p-2">${reg.duration_minutes || '-'} min</td></tr>`).join(''); } catch (error) { mostrarMensaje(error.message, 'error'); }
         }
+        function descargarInformeFechas(tipo, nombre) { const desde = document.getElementById('rep_desde').value; const hasta = document.getElementById('rep_hasta').value; const params = new URLSearchParams(); if (desde) params.set('desde', desde); if (hasta) params.set('hasta', hasta); adminFetch(`${API_BASE_URL}/api/v1/time/export/${tipo}?${params}`).then(async response => { if (!response.ok) { let detalle = t('msg.reportFailed'); try { detalle = (await response.json()).detail || detalle; } catch (e) { /* respuesta sin JSON */ } throw new Error(detalle); } return response.blob(); }).then(blob => { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${nombre}_${desde || 'mes'}_${hasta || 'hoy'}.csv`; link.click(); }).catch(error => mostrarMensaje(error.message, 'error')); }
         function descargarExcel() { adminFetch(`${API_BASE_URL}/api/v1/time/export/excel`).then(response => { if (!response.ok) throw new Error(t('msg.reportFailed')); return response.blob(); }).then(blob => { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'informe_horas_nexusmold_cloud.csv'; link.click(); }).catch(error => mostrarMensaje(error.message, 'error')); }
-        window.onload = () => { const emp = localStorage.getItem('empleado_actual'); if (emp) document.getElementById('emp').value = emp; if (localStorage.getItem('pulsera_vip')) actualizarEstadoVIP(true); const tarea = JSON.parse(localStorage.getItem('tarea_activa') || 'null'); if (tarea) activarModoTrabajando(tarea.obra); cargarMisFichajes(); };
+        // ===== Utilidades seguras para pintar datos (sin innerHTML con datos del usuario) =====
+        function crearEl(tag, clase, texto) { const el = document.createElement(tag); if (clase) el.className = clase; if (texto !== undefined && texto !== null) el.textContent = texto; return el; }
+        function crearBoton(texto, clase, accion) { const b = crearEl('button', `${clase} text-white font-bold px-3 py-1.5 rounded-lg text-xs`, texto); b.type = 'button'; b.onclick = accion; return b; }
+        const fmtDia = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString(currentLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
+        const rangoDias = (a) => a.desde === a.hasta ? fmtDia(a.desde) : `${fmtDia(a.desde)} → ${fmtDia(a.hasta)}`;
+        const COLOR_ESTADO = { PENDIENTE: 'bg-amber-100 text-amber-800', APROBADA: 'bg-emerald-100 text-emerald-800', RECHAZADA: 'bg-rose-100 text-rose-800', CANCELADA: 'bg-slate-100 text-slate-600' };
+        async function workerJson(url, method = 'GET', values = {}) {
+            const token = localStorage.getItem('pulsera_vip');
+            if (!token) throw new Error(t('msg.loginFirst'));
+            const params = new URLSearchParams(values);
+            const response = await fetch(`${url}${params.toString() ? `?${params}` : ''}`, { method, headers: authHeaders(token) });
+            let data = {};
+            try { data = await response.json(); } catch (e) { /* respuesta sin JSON */ }
+            if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : t('msg.connError'));
+            return data;
+        }
+
+        // ===== Operario: estado de la jornada =====
+        async function cargarEstadoJornada() {
+            const caja = document.getElementById('estado-jornada');
+            const ids = ['btn-entrada', 'btn-pausa-ini', 'btn-pausa-fin', 'btn-salida'];
+            if (!localStorage.getItem('pulsera_vip')) { caja.classList.add('hidden'); ids.forEach(id => document.getElementById(id).classList.toggle('hidden', id !== 'btn-salida')); return; }
+            try {
+                const data = await workerJson(`${API_BASE_URL}/api/v1/time/me/status`);
+                const visibles = { fuera: ['btn-entrada'], trabajando: ['btn-pausa-ini', 'btn-salida'], en_pausa: ['btn-pausa-fin'] }[data.estado] || ['btn-salida'];
+                if (data.jornada_olvidada) visibles.push('btn-entrada');
+                ids.forEach(id => document.getElementById(id).classList.toggle('hidden', !visibles.includes(id)));
+                const color = { fuera: 'bg-slate-100 text-slate-700', trabajando: 'bg-emerald-100 text-emerald-800', en_pausa: 'bg-amber-100 text-amber-800' }[data.estado];
+                caja.className = `text-sm font-semibold p-2 rounded-lg mb-3 text-center ${color}`;
+                caja.textContent = t(`shift.state.${data.estado}`) + (data.desde ? ` · ${t('shift.since')} ${data.desde}` : '') + (data.jornada_olvidada ? ` · ${t('shift.forgotten')}` : '');
+            } catch (error) { caja.classList.add('hidden'); ids.forEach(id => document.getElementById(id).classList.remove('hidden')); }
+        }
+
+        // ===== Operario: vacaciones y permisos =====
+        async function cargarMisAusencias() {
+            const seccion = document.getElementById('mis-ausencias-section');
+            if (!localStorage.getItem('pulsera_vip')) { seccion.classList.add('hidden'); return; }
+            seccion.classList.remove('hidden');
+            try {
+                const data = await workerJson(`${API_BASE_URL}/api/v1/absences/me`);
+                const s = data.saldo_vacaciones;
+                document.getElementById('saldo-vacaciones').textContent = t('abs.balance', { anio: s.anio, disp: s.disponibles, total: s.dias_anuales, usados: s.usados, pend: s.pendientes });
+                const lista = document.getElementById('mis-ausencias-lista');
+                lista.replaceChildren();
+                if (!data.ausencias.length) lista.appendChild(crearEl('p', 'text-center text-sm text-slate-400 py-3', t('abs.none')));
+                for (const a of data.ausencias) {
+                    const fila = crearEl('div', 'py-2 text-sm');
+                    const cab = crearEl('div', 'flex items-center justify-between gap-2');
+                    cab.appendChild(crearEl('span', 'font-bold text-slate-800', `${t('absType.' + a.tipo)} · ${a.dias_laborables} ${t('abs.days')}`));
+                    cab.appendChild(crearEl('span', `px-2 py-0.5 rounded-full text-xs font-bold ${COLOR_ESTADO[a.estado] || ''}`, t('absStatus.' + a.estado)));
+                    fila.appendChild(cab);
+                    fila.appendChild(crearEl('div', 'text-slate-500', rangoDias(a)));
+                    if (a.respuesta) fila.appendChild(crearEl('div', 'text-slate-500 italic', `💬 ${a.respuesta}`));
+                    if (a.estado === 'PENDIENTE') fila.appendChild(crearBoton(t('abs.cancel'), 'mt-1 bg-slate-500 hover:bg-slate-600', () => anularMiAusencia(a.id)));
+                    lista.appendChild(fila);
+                }
+                const festivos = await workerJson(`${API_BASE_URL}/api/v1/absences/holidays`);
+                const ul = document.getElementById('festivos-operario');
+                ul.replaceChildren(...(festivos.length ? festivos.map(f => crearEl('li', '', `${fmtDia(f.fecha)} · ${f.nombre}`)) : [crearEl('li', 'text-slate-400', t('hol.none'))]));
+            } catch (error) { document.getElementById('saldo-vacaciones').textContent = error.message; }
+        }
+        async function pedirAusencia() {
+            const desde = document.getElementById('aus-desde').value, hasta = document.getElementById('aus-hasta').value || desde;
+            if (!desde) return mostrarMensaje(t('abs.datesRequired'), 'error');
+            try {
+                await workerJson(`${API_BASE_URL}/api/v1/absences/request`, 'POST', { tipo: document.getElementById('aus-tipo').value, desde, hasta, comentario: document.getElementById('aus-comentario').value.trim() });
+                mostrarMensaje(t('abs.sent')); document.getElementById('aus-comentario').value = ''; cargarMisAusencias();
+            } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function anularMiAusencia(id) {
+            if (!window.confirm(t('abs.confirmCancel'))) return;
+            try { await workerJson(`${API_BASE_URL}/api/v1/absences/${id}/cancel`, 'POST'); mostrarMensaje(t('abs.cancelled')); cargarMisAusencias(); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+
+        // ===== Gerencia: jornadas sin cerrar y correcciones =====
+        async function cargarAvisos() {
+            const caja = document.getElementById('avisos-lista');
+            try {
+                const data = await adminJson(`${API_BASE_URL}/api/v1/time/alerts/open-shifts`, 'GET');
+                caja.replaceChildren();
+                if (!data.avisos.length) { caja.appendChild(crearEl('p', 'text-emerald-700 font-semibold', t('alerts.none'))); return; }
+                for (const a of data.avisos) {
+                    const fila = crearEl('div', 'flex flex-wrap items-center justify-between gap-2 bg-amber-50 p-2 rounded-lg');
+                    fila.appendChild(crearEl('span', 'text-amber-900', t('alerts.row', { code: a.employee_code, nombre: a.nombre, entrada: a.entrada, horas: a.horas_abierta })));
+                    fila.appendChild(crearBoton(t('alerts.fix'), 'bg-amber-600 hover:bg-amber-700', () => { document.getElementById('corr-emp').value = a.employee_code; document.getElementById('corr-tipo').value = 'CLOCK_OUT'; document.getElementById('corr-motivo').focus(); }));
+                    caja.appendChild(fila);
+                }
+            } catch (error) { caja.textContent = error.message; }
+        }
+        async function enviarCorreccion() {
+            try {
+                const data = await adminJson(`${API_BASE_URL}/api/v1/time/correction`, 'POST', { employee_code: adminValue('corr-emp'), tipo: document.getElementById('corr-tipo').value, fecha_hora: document.getElementById('corr-fecha').value, motivo: adminValue('corr-motivo') });
+                mostrarMensaje(data.mensaje); document.getElementById('corr-motivo').value = ''; cargarAvisos(); cargarRegistros();
+            } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+
+        // ===== Gerencia: ausencias =====
+        let filtroAusencias = 'PENDIENTE';
+        async function cargarAusenciasAdmin(estado) {
+            filtroAusencias = estado;
+            const lista = document.getElementById('ausencias-admin-lista');
+            try {
+                const data = await adminJson(`${API_BASE_URL}/api/v1/absences`, 'GET', estado ? { estado } : {});
+                lista.replaceChildren();
+                if (!data.length) { lista.appendChild(crearEl('p', 'text-slate-400 py-2', t('abs.none'))); return; }
+                for (const a of data) {
+                    const fila = crearEl('div', 'py-2 flex flex-wrap items-center justify-between gap-2');
+                    const info = crearEl('div', '');
+                    info.appendChild(crearEl('div', 'font-bold text-slate-800', `${a.employee_code} · ${a.nombre} — ${t('absType.' + a.tipo)}`));
+                    info.appendChild(crearEl('div', 'text-slate-500', `${rangoDias(a)} · ${a.dias_laborables} ${t('abs.days')}`));
+                    if (a.comentario) info.appendChild(crearEl('div', 'text-slate-500 italic', `📝 ${a.comentario}`));
+                    if (a.respuesta) info.appendChild(crearEl('div', 'text-slate-500 italic', `💬 ${a.respuesta}`));
+                    fila.appendChild(info);
+                    const acciones = crearEl('div', 'flex gap-2 items-center');
+                    acciones.appendChild(crearEl('span', `px-2 py-0.5 rounded-full text-xs font-bold ${COLOR_ESTADO[a.estado] || ''}`, t('absStatus.' + a.estado)));
+                    if (a.estado === 'PENDIENTE') {
+                        acciones.appendChild(crearBoton(t('absAdm.approve'), 'bg-emerald-600 hover:bg-emerald-700', () => decidirAusencia(a.id, true)));
+                        acciones.appendChild(crearBoton(t('absAdm.reject'), 'bg-rose-600 hover:bg-rose-700', () => decidirAusencia(a.id, false)));
+                    } else if (a.estado === 'APROBADA') {
+                        acciones.appendChild(crearBoton(t('absAdm.annul'), 'bg-slate-500 hover:bg-slate-600', () => anularAusencia(a.id)));
+                    }
+                    fila.appendChild(acciones);
+                    lista.appendChild(fila);
+                }
+            } catch (error) { lista.textContent = error.message; }
+        }
+        async function decidirAusencia(id, aprobar) {
+            const respuesta = window.prompt(t(aprobar ? 'absAdm.replyApprove' : 'absAdm.replyReject'), '');
+            if (respuesta === null) return;
+            try { const data = await adminJson(`${API_BASE_URL}/api/v1/absences/${id}/decision`, 'POST', { aprobar, respuesta }); mostrarMensaje(data.mensaje); cargarAusenciasAdmin(filtroAusencias); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function anularAusencia(id) {
+            const motivo = window.prompt(t('absAdm.annulReason'), '');
+            if (!motivo) return;
+            try { const data = await adminJson(`${API_BASE_URL}/api/v1/absences/${id}/annul`, 'POST', { motivo }); mostrarMensaje(data.mensaje); cargarAusenciasAdmin(filtroAusencias); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function registrarAusenciaAdmin() {
+            const desde = document.getElementById('absadm-desde').value, hasta = document.getElementById('absadm-hasta').value || desde;
+            try { const data = await adminJson(`${API_BASE_URL}/api/v1/absences`, 'POST', { employee_code: adminValue('absadm-emp'), tipo: document.getElementById('absadm-tipo').value, desde, hasta }); mostrarMensaje(data.mensaje); cargarAusenciasAdmin('APROBADA'); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function cargarDiasVacaciones() {
+            try { const data = await adminJson(`${API_BASE_URL}/api/v1/absences/settings`, 'GET'); document.getElementById('dias-vacaciones').value = data.dias_vacaciones; } catch (error) { /* el campo se queda vacio */ }
+        }
+        async function guardarDiasVacaciones() {
+            try { const data = await adminJson(`${API_BASE_URL}/api/v1/absences/settings`, 'PATCH', { dias_vacaciones: adminValue('dias-vacaciones') }); mostrarMensaje(data.mensaje); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+
+        // ===== Gerencia: festivos =====
+        async function cargarFestivosAdmin() {
+            const ul = document.getElementById('festivos-admin');
+            try {
+                const data = await adminJson(`${API_BASE_URL}/api/v1/absences/holidays`, 'GET');
+                ul.replaceChildren();
+                if (!data.length) { ul.appendChild(crearEl('li', 'text-slate-400 py-2', t('hol.none'))); return; }
+                for (const f of data) {
+                    const li = crearEl('li', 'py-2 flex items-center justify-between gap-2');
+                    li.appendChild(crearEl('span', '', `${fmtDia(f.fecha)} · ${f.nombre}`));
+                    li.appendChild(crearBoton(t('hol.delete'), 'bg-rose-600 hover:bg-rose-700', () => borrarFestivo(f.id)));
+                    ul.appendChild(li);
+                }
+            } catch (error) { ul.textContent = error.message; }
+        }
+        async function anadirFestivo() {
+            try { const data = await adminJson(`${API_BASE_URL}/api/v1/absences/holidays`, 'POST', { fecha: document.getElementById('fest-fecha').value, nombre: adminValue('fest-nombre') }); mostrarMensaje(data.mensaje); document.getElementById('fest-nombre').value = ''; cargarFestivosAdmin(); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+        async function borrarFestivo(id) {
+            if (!window.confirm(t('hol.confirmDelete'))) return;
+            try { await adminJson(`${API_BASE_URL}/api/v1/absences/holidays/${id}`, 'DELETE'); cargarFestivosAdmin(); } catch (error) { mostrarMensaje(error.message, 'error'); }
+        }
+
+        // Al cambiar de idioma, vuelve a pintar lo que viene del servidor (saldo, listas, estado)
+        function refrescarTextosDinamicos() {
+            if (localStorage.getItem('pulsera_vip')) { cargarEstadoJornada(); cargarMisAusencias(); cargarMisFichajes(); }
+            if (!document.getElementById('admin-panel').classList.contains('hidden')) { cargarAvisos(); cargarAusenciasAdmin(filtroAusencias); cargarFestivosAdmin(); }
+        }
+
+        window.onload = () => { const emp = localStorage.getItem('empleado_actual'); if (emp) document.getElementById('emp').value = emp; if (localStorage.getItem('pulsera_vip')) actualizarEstadoVIP(true); const tarea = JSON.parse(localStorage.getItem('tarea_activa') || 'null'); if (tarea) activarModoTrabajando(tarea.obra); cargarMisFichajes(); cargarEstadoJornada(); cargarMisAusencias(); };
     </script>
     <script>
     // ===== NexusMold Cloud - Modo App (PWA) =====
